@@ -1,19 +1,28 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>ML Prediction Web App</title>
+    <meta charset="UTF-8">
+    <title>Sexual Crime Text Analysis</title>
+    <style>
+        body { font-family: Arial; margin: 50px; background: #f7f7f7; }
+        .container { max-width: 700px; margin: auto; padding: 20px; background: white; border-radius: 10px; box-shadow: 0 0 10px #ccc; }
+        textarea { width: 100%; height: 120px; padding: 10px; font-size: 16px; }
+        button { padding: 10px 20px; font-size: 16px; cursor: pointer; border: none; border-radius: 5px; background: #007BFF; color: white; }
+        .result { margin-top: 20px; font-size: 16px; color: #333; white-space: pre-wrap; }
+    </style>
 </head>
 <body>
-    <h2>Enter Input Values</h2>
+    <div class="container">
+        <h2>Sexual Crime Text Analysis</h2>
+        <form method="POST" action="/predict">
+            <textarea name="text_input" placeholder="Enter sexual crime text here...">{{ input_text }}</textarea><br><br>
+            <button type="submit">Predict</button>
+        </form>
 
-    <form action="/predict" method="POST">
-        <input type="text" name="v1" placeholder="Value 1" required><br><br>
-        <input type="text" name="v2" placeholder="Value 2" required><br><br>
-        <button type="submit">Predict</button>
-    </form>
-
-    {% if result %}
-        <h3>Prediction: {{ result }}</h3>
-    {% endif %}
-</body>
-</html>
+        {% if result %}
+        <div class="result">
+            {{ result|safe }}
+        </div>
+        {% endif %}
+    </div>
+</body></html>

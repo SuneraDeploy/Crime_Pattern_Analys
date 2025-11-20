@@ -1,62 +1,50 @@
-# ...existing code...
-import warnings
-try:
-    from flask import Flask, render_template, request
-    import joblib
-    import numpy as np
-    import os
-    import traceback
-    # suppress sklearn version mismatch warnings (optional)
-    from sklearn.base import InconsistentVersionWarning
-    warnings.filterwarnings("ignore", category=InconsistentVersionWarning)
-except ModuleNotFoundError as e:
-    print(f"Missing package: {e.name}")
-    print("Install with:")
-    print(f"    py -3 -m pip install {e.name}")
-    print("Or install all requirements:")
-    print("    py -3 -m pip install -r requirements.txt")
-    raise
-# ...existing code...
-app = Flask(__name__)
+from flask import Flask, render_template, request
+from pathlib import Path
+import joblib
 
-# ...existing code...
-# safer model loading using absolute path
-model_path = os.path.join(os.path.dirname(__file__), "model.pkl")
+# ඔයාගේ helper functions import කරන්න
+# (clean_text, get_full_analysis, etc.)
+import importlib
+get_full_analysis = None
 try:
-    model = joblib.load(model_path)
-except Exception as e:
-    model = None
-    print(f"Failed to load model from {model_path}: {e}")
-    traceback.print_exc()
+    module = importlib.import_module("your_helper_module")
+    get_full_analysis = getattr(module, "get_full_analysis")
+except Exception:
+    # Fallback minimal implementation to avoid import errors during development/testing.
+    def get_full_analysis(text):
+        # Simple placeholder analysis — replace with your real implementation/module.
+        return {
+            "length": len(text),
+            "preview": text[:200],
+            "words": len(text.split())
+        }
 
-@app.route('/')
+app = Flask(__name__, template_folder="templates")
+
+@app.route("/")
 def home():
-    return render_template("index.html")
+    return render_template("index.html", input_text="", result="")
 
-@app.route('/predict', methods=['POST'])
+@app.route("/predict", methods=["POST"])
 def predict():
-    if model is None:
-        return render_template("index.html", result="Model not loaded")
+    text = request.form.get("text_input", "").strip()
 
-    # collect and validate form inputs
-    raw_vals = [v.strip() for v in request.form.values() if v is not None]
-    if not raw_vals:
-        return render_template("index.html", result="No input provided")
+    if not text:
+        return render_template("index.html", input_text="", result="⚠️ Please enter text!")
 
     try:
-        features = [float(x) for x in raw_vals]
-    except ValueError:
-        return render_template("index.html", result="Invalid input: ensure all fields are numbers")
+        # Use your structured analysis function
+        analysis = get_full_analysis(text)
 
-    final = np.array(features).reshape(1, -1)
-    try:
-        prediction = model.predict(final)
-        out = prediction[0]
+        # Format HTML safe output
+        formatted_result = ""
+        for k, v in analysis.items():
+            formatted_result += f"- {k}: {v}<br>"
+
     except Exception as e:
-        return render_template("index.html", result=f"Prediction error: {e}")
+        formatted_result = f"Prediction error: {e}"
 
-    return render_template("index.html", result=out)
+    return render_template("index.html", input_text=text, result=formatted_result)
 
 if __name__ == "__main__":
     app.run(debug=True)
-# ...existing code...
